@@ -16,23 +16,6 @@ using namespace std::chrono;
 #include "factor_store.hpp"
 
 struct factor_matcher_helper {
-
-    template <class t_itr>
-    static void print_pattern_alignment(const t_itr& start, const t_itr& it,
-                                        const std::vector<uint8_t>& P)
-    {
-        auto dist = std::distance(start, it);
-        std::cout << " P = ";
-        for (size_t i = 0; i < dist; i++) std::cout << "#";
-        for (size_t i = 0; i < P.size(); i++) {
-            if (isprint(P[i]))
-                std::cout << P[i];
-            else
-                std::cout << "?";
-        }
-        std::cout << "'" << std::endl;
-    }
-
     template <class t_itr>
     static bool match_decoded(t_itr it, const std::vector<uint8_t>& P)
     {
@@ -100,33 +83,18 @@ struct factor_matcher_helper {
         }
         return true;
     }
-    static sdsl::int_vector<32> calculate_sa(const std::vector<uint8_t>& P)
+    static std::vector<uint32_t> calculate_sa(const std::vector<uint8_t>& P)
     {
         size_t m = P.size();
-        sdsl::int_vector<32> sa(m, 0);
+        std::vector<uint32_t> sa(m);
         divsufsort(P.data(), (int32_t*)sa.data(), m);
         return sa;
     }
-    static void print_sa(const sdsl::int_vector<32>& sa,
-                         const std::vector<uint8_t>& T)
-    {
-        for (size_t i = 0; i < sa.size(); i++) {
-            std::cout << std::setw(3) << i << "  " << std::setw(3) << sa[i]
-                      << "  ";
-            for (size_t j = sa[i]; j < T.size(); j++) {
-                if (isprint(T[j]))
-                    std::cout << T[j];
-                else
-                    std::cout << "_";
-            }
-            std::cout << "$\n";
-        }
-    }
-    static size_t search_sa(const sdsl::int_vector<32>& sa,
+    static size_t search_sa(const std::vector<uint32_t>& sa,
                             const std::vector<uint8_t>& T,
                             const std::vector<uint8_t>& P, size_t cur_alignment)
     {
-        typedef sdsl::int_vector<>::value_type value_type;
+        typedef std::vector<uint32_t>::value_type value_type;
         size_t sp = 0;
         size_t ep = sa.size() - 1;
         size_t pos = P.size() - 1;
@@ -255,12 +223,12 @@ struct factor_matcher_exhaustive_cd {
 
 struct factor_matcher_kmp {
     static std::string name() { return "KMP"; }
-    static sdsl::int_vector<>
+    static std::vector<uint64_t>
     calculate_kmp_shift_table(const std::vector<uint8_t>& P)
     {
         size_t m = P.size();
 
-        sdsl::int_vector<> kmp_table(m, 0, sdsl::bit_magic::l1BP(m) + 1);
+        std::vector<uint64_t> kmp_table(m, 0);
         size_t i = 1, j = 0;
         while (i < m) {
             if (P[i] == P[j]) {
@@ -305,11 +273,11 @@ struct factor_matcher_kmp {
 
 struct factor_matcher_bmh {
     static std::string name() { return "BMH"; }
-    static sdsl::int_vector<>
+    static std::vector<uint64_t>
     calculate_bmh_shift_table(const std::vector<uint8_t>& P)
     {
         size_t m = P.size();
-        sdsl::int_vector<> bmh_table(256, m, sdsl::bit_magic::l1BP(m) + 1);
+        std::vector<uint64_t> bmh_table(256, m);
         for (size_t i = 0; i < m - 1; i++) {
             bmh_table[P[i]] = m - i - 1;
         }
@@ -323,9 +291,6 @@ struct factor_matcher_bmh {
         auto start = T.begin();
         auto itr = start;
         while (itr.cur_factor() <= T.last_regular_factor()) {
-            // T.print_state(true);
-            // factor_matcher_helper::print_pattern_alignment(start,itr,P);
-
             size_t matched = 0;
             auto last = itr + (m - 1);
             auto it = last;
@@ -338,21 +303,17 @@ struct factor_matcher_bmh {
             }
             itr += bmh_table[*last];
         }
-
-        // T.decode_all();
-        // T.print_state(true);
-
         return false;
     }
 };
 
 struct factor_matcher_bmh_cd {
     static std::string name() { return "BMH-CD"; }
-    static sdsl::int_vector<>
+    static std::vector<uint64_t>
     calculate_bmh_shift_table(const std::vector<uint8_t>& P)
     {
         size_t m = P.size();
-        sdsl::int_vector<> bmh_table(256, m, sdsl::bit_magic::l1BP(m) + 1);
+        std::vector<uint64_t> bmh_table(256, m);
         for (size_t i = 0; i < m - 1; i++) {
             bmh_table[P[i]] = m - i - 1;
         }
@@ -439,7 +400,7 @@ struct factor_matcher_sa_smart {
         return std::make_tuple(factor, factor_pos, matched);
     }
     template <class t_itr>
-    static t_itr find_new_alignment(t_itr it, sdsl::int_vector<32>& sa,
+    static t_itr find_new_alignment(t_itr it,const std::vector<uint32_t>& sa,
                                     const std::vector<uint8_t>& PRev,
                                     const std::vector<uint8_t>& P)
     {
@@ -495,38 +456,8 @@ struct factor_matcher_mbmh_cd {
             }
             last[P[i]] = i;
         }
-        return mbmh_matrix;
+        return std::move(mbmh_matrix);
     }
-    static void print_matrix(const std::vector<uint64_t>& M,
-                             const std::vector<uint8_t>& P)
-    {
-        size_t m = P.size();
-        std::vector<uint64_t> exists(256, 0);
-        for (const auto& sym : P) exists[(int)sym] = 1;
-
-        std::cout << "=============================================\n";
-        for (size_t i = 0; i < exists.size(); i++) {
-            if (exists[i] != 0) {
-                if (isprint((int)i))
-                    std::cout << (char)i << " ";
-                else
-                    std::cout << "? ";
-            }
-        }
-        std::cout << std::endl;
-        for (size_t i = 0; i < m; i++) {
-            for (size_t j = 0; j < exists.size(); j++) {
-                if (exists[j] != 0) {
-                    if (M[i * 256 + j] != 0)
-                        std::cout << M[i * 256 + j] << " ";
-                    else
-                        std::cout << "  ";
-                }
-            }
-            std::cout << std::endl;
-        }
-    }
-
     template <class t_itr>
     static t_itr find_new_alignment(t_itr it, const std::vector<uint64_t>& M,
                                     const std::vector<uint8_t>& P)
