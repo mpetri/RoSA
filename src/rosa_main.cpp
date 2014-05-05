@@ -190,10 +190,7 @@ void benchmark_matchlz(const char* file_name, size_type b, size_type fac_dens,
     index.set_output_dir(string(output_dir));
 
     /* get patterns */
-    // std::cerr << "reading patterns from file " << pattern_file_name << " ..."
-    // << std::endl;
     pattern_file_ng pf(pattern_file_name);
-    // std::cerr << "loaded " << pf.size() << " patterns." << std::endl;
 
     using timer = std::chrono::high_resolution_clock;
     using namespace std::chrono;
@@ -214,24 +211,11 @@ void benchmark_matchlz(const char* file_name, size_type b, size_type fac_dens,
         checksum += hash_fn(count);
 
         if (count == 0) {
-            /*
-            std::cerr << "m=" << P.size() << " P='";
-            for(size_t i=0;i<P.size();i++) {
-                if(isprint(P[i])) std::cerr << P[i];
-                else std::cerr << "?";
-            }
-            std::cerr << "'" << std::endl;
-            std::cerr << i << " ERROR!. count is 0. should not happen. bug in
-            code?" << std::endl;*/
             zero_cnt++;
-            // exit(EXIT_FAILURE);
         }
 
         if (index.matchlz_performed()) {
             auto matchlz_stats = index.matchlz_statistics();
-            // static std::string filename =
-            // std::string("factor_lens")+"_"+std::to_string(b)+"_"+std::to_string(fac_dens)+".csv";
-            // static ofstream factor_len_stats(filename,ios::out | ios::app);
             auto ifilename = strdup(file_name);
             auto base_name = basename(ifilename);
             method = matchlz_stats.method;
@@ -246,11 +230,6 @@ void benchmark_matchlz(const char* file_name, size_type b, size_type fac_dens,
                       << matchlz_stats.factor_ids_decoded << ";"
                       << matchlz_stats.match_time.count() << ";"
                       << count_time.count() << std::endl;
-
-            /*
-            for(const auto& flen : matchlz_stats.factor_lens) {
-                factor_len_stats << P.size() << ";" << flen << "\n";
-            }*/
         }
         i++;
     }
@@ -258,6 +237,67 @@ void benchmark_matchlz(const char* file_name, size_type b, size_type fac_dens,
               << method << " ZC=" << zero_cnt << " CHECKSUM=" << checksum
               << std::endl;
 }
+
+template <class tIndex>
+void benchmark_factorlen(const char* file_name, size_type b, size_type fac_dens,
+                       const char* pattern_file_name, const char* tmp_file_dir,
+                       const char* output_dir,
+                       bool repeated_in_memory_search = false,
+                       bool only_in_memory = false,
+                       bool only_external_memory = false,
+                       bool locate_queries = false)
+{
+    {
+        tIndex index;
+        generate_index(index, file_name, b, fac_dens, false, false,
+                       tmp_file_dir, output_dir);
+    }
+    /* load */
+    tIndex index;
+    string int_idx_file_name
+        = tIndex::get_int_idx_filename(file_name, b, fac_dens, output_dir);
+    util::load_from_file(index, int_idx_file_name.c_str());
+    index.set_file_name(string(file_name));
+    index.set_output_dir(string(output_dir));
+
+    /* get patterns */
+    pattern_file_ng pf(pattern_file_name);
+
+    using timer = std::chrono::high_resolution_clock;
+    using namespace std::chrono;
+
+    /* query */
+    size_t i = 0;
+    size_t checksum = 0;
+    size_t zero_cnt = 0;
+    std::hash<uint64_t> hash_fn;
+    std::string method;
+    for (const auto& P : pf) {
+        auto count_start = timer::now();
+        uint64_t count = index.count((const unsigned char*)P.c_str(), P.size(),
+                                     repeated_in_memory_search);
+        auto count_stop = timer::now();
+        auto count_time = duration_cast<microseconds>(count_stop - count_start);
+
+        checksum += hash_fn(count);
+
+        if (count == 0) {
+            zero_cnt++;
+        }
+
+        if (index.matchlz_performed()) {
+            auto matchlz_stats = index.matchlz_statistics();
+            for(const auto& flen : matchlz_stats.factor_lens) {
+                std::cout << b << ";" << ";" << fac_dens << ";" << P.size() << ";" << flen << "\n";
+            }
+        }
+        i++;
+    }
+    std::cerr << "NP=" << pf.size() << " B=" << b << " R=" << fac_dens << " "
+              << method << " ZC=" << zero_cnt << " CHECKSUM=" << checksum
+              << std::endl;
+}
+
 
 template <class tIndex>
 void benchmark(const char* file_name, size_type b, size_type fac_dens,
@@ -428,6 +468,7 @@ void display_usage(char* command)
             "the text*; default=0" << endl;
     cout << " benchmark        : run benchmark; default=0" << endl;
     cout << " benchmark_matchlz: run benchmark_matchlz; default=0" << endl;
+    cout << " benchmark_factorlen: run benchmark_factorlen; default=0" << endl;
     cout << " benchmark_int    : run benchmark for in-memory part only; "
             "default=0" << endl;
     cout << " benchmark_ext    : run benchmark for external memory part only; "
@@ -488,6 +529,7 @@ int main(int argc, char* argv[])
     int output_statistics = 0;
     int run_benchmark = 0;
     int run_benchmark_matchlz = 0;
+    int run_benchmark_factorlen = 0;
     int run_benchmark_int = 0;
     int run_benchmark_ext = 0;
     int locate_queries = 0;
@@ -527,6 +569,7 @@ int main(int argc, char* argv[])
                {"output_statistics", no_argument, &output_statistics, 1},
                {"benchmark", no_argument, &run_benchmark, 1},
                {"benchmark_matchlz", no_argument, &run_benchmark_matchlz, 1},
+               {"benchmark_factorlen", no_argument, &run_benchmark_factorlen, 1},
                {"benchmark_int", no_argument, &run_benchmark_int, 1},
                {"benchmark_ext", no_argument, &run_benchmark_ext, 1},
                {"benchmark_loc", no_argument, &locate_queries, 1},
@@ -771,6 +814,15 @@ int main(int argc, char* argv[])
         // std::cerr << "run benchmark_matchlz" << std::endl;
         // std::cerr << "pattern_file_name " << pattern_file_name << std::endl;
         benchmark_matchlz<tIDX>(
+            input_file_name.c_str(), b, fac_dens, pattern_file_name.c_str(),
+            tmp_file_dir.c_str(), output_dir.c_str(), repeated_in_memory_search,
+            run_benchmark_int, run_benchmark_ext, locate_queries);
+    }
+
+    if (run_benchmark_factorlen) {
+        // std::cerr << "run benchmark_matchlz" << std::endl;
+        // std::cerr << "pattern_file_name " << pattern_file_name << std::endl;
+        benchmark_factorlen<tIDX>(
             input_file_name.c_str(), b, fac_dens, pattern_file_name.c_str(),
             tmp_file_dir.c_str(), output_dir.c_str(), repeated_in_memory_search,
             run_benchmark_int, run_benchmark_ext, locate_queries);
