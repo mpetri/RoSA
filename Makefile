@@ -2,7 +2,7 @@ INCLUDE_PATH=./include
 LIB_PATH=./lib
 SRC_DIR=src
 BIN_DIR=bin
-CFLAGS=-O3 -funroll-loops -msse4.2 -DMEM_INFO -DOUTPUT_STATS -DMEM_INFO -DWRITE_R_OUTPUT -DNDEBUG # -DSDSL_DEBUG_ALGORITHMS_FOR_COMPRESSED_SUFFIX_ARRAYS
+CFLAGS=-std=c++11 -O3 -funroll-loops -msse4.2 -DMEM_INFO -DOUTPUT_STATS -DMEM_INFO -DWRITE_R_OUTPUT -DNDEBUG # -DSDSL_DEBUG_ALGORITHMS_FOR_COMPRESSED_SUFFIX_ARRAYS
 #CFLAGS=-O0 -g -funroll-loops -msse4.2 -DMEM_INFO -DOUTPUT_STATS -DMEM_INFO -DWRITE_R_OUTPUT # -DSDSL_DEBUG_ALGORITHMS_FOR_COMPRESSED_SUFFIX_ARRAYS
 
 all: ${BIN_DIR}/rosa_helping_structures.o \
@@ -10,15 +10,16 @@ all: ${BIN_DIR}/rosa_helping_structures.o \
 	 ${BIN_DIR}/bu_interval.o \
 	 ${BIN_DIR}/pattern_file.o \
 	 ${BIN_DIR}/rosa_sd2_delta \
-	 ${BIN_DIR}/rosa_sd2_delta_P0 \
-	 ${BIN_DIR}/rosa_sd2_delta_P1 \
-	 ${BIN_DIR}/rosa_sd2_delta_P2 \
-	 ${BIN_DIR}/rosa_sd2_delta_P3 \
-	 ${BIN_DIR}/rosa_sd2_delta_P4 \
-	 ${BIN_DIR}/rosa_sd2_delta_P5 \
-	 ${BIN_DIR}/fm16_huff_rrr \
-	 ${BIN_DIR}/fm64_huff_rrr \
-	 ${BIN_DIR}/create_pattern_files
+	 ${BIN_DIR}/matchlz_kmp \
+	 ${BIN_DIR}/matchlz_bmh \
+	 ${BIN_DIR}/matchlz_exh \
+	 ${BIN_DIR}/matchlz_sa \
+	 ${BIN_DIR}/matchlz_mbmh_cd \
+	 ${BIN_DIR}/convert_pattern_files \
+	 ${BIN_DIR}/print_pattern_file
+#	 ${BIN_DIR}/fm16_huff_rrr \
+#	 ${BIN_DIR}/fm64_huff_rrr \
+#	 ${BIN_DIR}/create_pattern_files \
 #	 ${BIN_DIR}/rosa_sd2\ 
 #	 ${BIN_DIR}/rosa_sd_load_only\
 #	 ${BIN_DIR}/rosa_sd_create_only\
@@ -48,6 +49,20 @@ ${BIN_DIR}/rosa_helping_functions.o: ${SRC_DIR}/rosa_helping_functions.cpp
 
 ${BIN_DIR}/pattern_file.o: ${SRC_DIR}/pattern_file.cpp
 	g++ ${CFLAGS} -I${INCLUDE_PATH} -c ${SRC_DIR}/pattern_file.cpp -o ${BIN_DIR}/pattern_file.o
+
+${BIN_DIR}/convert_pattern_files: ${BIN_DIR}/pattern_file.o ${BIN_DIR}/rosa_helping_functions.o ${BIN_DIR}/rosa_helping_structures.o ${BIN_DIR}/bu_interval.o
+	g++ ${CFLAGS} -I${INCLUDE_PATH} -L${LIB_PATH} \
+	    ${SRC_DIR}/convert_pattern_files.cpp -o ${BIN_DIR}/convert_pattern_files \
+		${BIN_DIR}/rosa_helping_functions.o ${BIN_DIR}/rosa_helping_structures.o ${BIN_DIR}/pattern_file.o \
+		${BIN_DIR}/bu_interval.o \
+		-lsdsl -ldivsufsort -ldivsufsort64
+
+${BIN_DIR}/print_pattern_file: ${BIN_DIR}/pattern_file.o ${BIN_DIR}/rosa_helping_functions.o ${BIN_DIR}/rosa_helping_structures.o ${BIN_DIR}/bu_interval.o
+	g++ ${CFLAGS} -I${INCLUDE_PATH} -L${LIB_PATH} \
+	    ${SRC_DIR}/print_pattern_file.cpp -o ${BIN_DIR}/print_pattern_file \
+		${BIN_DIR}/rosa_helping_functions.o ${BIN_DIR}/rosa_helping_structures.o ${BIN_DIR}/pattern_file.o \
+		${BIN_DIR}/bu_interval.o \
+		-lsdsl -ldivsufsort -ldivsufsort64
 
 ${BIN_DIR}/rosa_sd2: ${BIN_DIR}/pattern_file.o ${BIN_DIR}/rosa_helping_functions.o ${BIN_DIR}/rosa_helping_structures.o ${BIN_DIR}/bu_interval.o
 	g++ ${CFLAGS} -I${INCLUDE_PATH} -L${LIB_PATH} \
@@ -145,6 +160,62 @@ ${BIN_DIR}/fm16_huff_rrr: ${BIN_DIR}/pattern_file.o ${BIN_DIR}/rosa_helping_func
 ${BIN_DIR}/fm64_huff_rrr: ${BIN_DIR}/pattern_file.o ${BIN_DIR}/rosa_helping_functions.o ${BIN_DIR}/rosa_helping_structures.o ${BIN_DIR}/bu_interval.o ${SRC_DIR}/rosa_main.cpp
 	g++ ${CFLAGS} -I${INCLUDE_PATH} -L${LIB_PATH} -DFM64_HUFF_RRR \
 	    ${SRC_DIR}/rosa_main.cpp -o ${BIN_DIR}/fm64_huff_rrr \
+		${BIN_DIR}/rosa_helping_functions.o ${BIN_DIR}/rosa_helping_structures.o ${BIN_DIR}/pattern_file.o \
+		${BIN_DIR}/bu_interval.o \
+		-lsdsl -ldivsufsort -ldivsufsort64
+
+${BIN_DIR}/matchlz_kmp: ${BIN_DIR}/pattern_file.o ${BIN_DIR}/rosa_helping_functions.o ${BIN_DIR}/rosa_helping_structures.o ${BIN_DIR}/bu_interval.o ${SRC_DIR}/rosa_main.cpp
+	g++ ${CFLAGS} -I${INCLUDE_PATH} -L${LIB_PATH} -DLCP_WRAP=1 -DMATCH_KMP -DBENCH_MATCH \
+	    ${SRC_DIR}/rosa_main.cpp -o ${BIN_DIR}/matchlz_kmp \
+		${BIN_DIR}/rosa_helping_functions.o ${BIN_DIR}/rosa_helping_structures.o ${BIN_DIR}/pattern_file.o \
+		${BIN_DIR}/bu_interval.o \
+		-lsdsl -ldivsufsort -ldivsufsort64
+
+${BIN_DIR}/matchlz_bmh: ${BIN_DIR}/pattern_file.o ${BIN_DIR}/rosa_helping_functions.o ${BIN_DIR}/rosa_helping_structures.o ${BIN_DIR}/bu_interval.o ${SRC_DIR}/rosa_main.cpp
+	g++ ${CFLAGS} -I${INCLUDE_PATH} -L${LIB_PATH} -DLCP_WRAP=1  -DMATCH_BMH -DBENCH_MATCH \
+	    ${SRC_DIR}/rosa_main.cpp -o ${BIN_DIR}/matchlz_bmh \
+		${BIN_DIR}/rosa_helping_functions.o ${BIN_DIR}/rosa_helping_structures.o ${BIN_DIR}/pattern_file.o \
+		${BIN_DIR}/bu_interval.o \
+		-lsdsl -ldivsufsort -ldivsufsort64
+
+${BIN_DIR}/matchlz_bmh_cd: ${BIN_DIR}/pattern_file.o ${BIN_DIR}/rosa_helping_functions.o ${BIN_DIR}/rosa_helping_structures.o ${BIN_DIR}/bu_interval.o ${SRC_DIR}/rosa_main.cpp
+	g++ ${CFLAGS} -I${INCLUDE_PATH} -L${LIB_PATH} -DLCP_WRAP=1 -DMATCH_BMH_CD -DBENCH_MATCH \
+	    ${SRC_DIR}/rosa_main.cpp -o ${BIN_DIR}/matchlz_bmh_cd \
+		${BIN_DIR}/rosa_helping_functions.o ${BIN_DIR}/rosa_helping_structures.o ${BIN_DIR}/pattern_file.o \
+		${BIN_DIR}/bu_interval.o \
+		-lsdsl -ldivsufsort -ldivsufsort64
+
+${BIN_DIR}/matchlz_exh: ${BIN_DIR}/pattern_file.o ${BIN_DIR}/rosa_helping_functions.o ${BIN_DIR}/rosa_helping_structures.o ${BIN_DIR}/bu_interval.o ${SRC_DIR}/rosa_main.cpp
+	g++ ${CFLAGS} -I${INCLUDE_PATH} -L${LIB_PATH} -DLCP_WRAP=1 -DMATCH_EXH -DBENCH_MATCH \
+	    ${SRC_DIR}/rosa_main.cpp -o ${BIN_DIR}/matchlz_exh \
+		${BIN_DIR}/rosa_helping_functions.o ${BIN_DIR}/rosa_helping_structures.o ${BIN_DIR}/pattern_file.o \
+		${BIN_DIR}/bu_interval.o \
+		-lsdsl -ldivsufsort -ldivsufsort64
+
+${BIN_DIR}/matchlz_exh_cd: ${BIN_DIR}/pattern_file.o ${BIN_DIR}/rosa_helping_functions.o ${BIN_DIR}/rosa_helping_structures.o ${BIN_DIR}/bu_interval.o ${SRC_DIR}/rosa_main.cpp
+	g++ ${CFLAGS} -I${INCLUDE_PATH} -L${LIB_PATH} -DLCP_WRAP=1 -DMATCH_EXH_CD -DBENCH_MATCH \
+	    ${SRC_DIR}/rosa_main.cpp -o ${BIN_DIR}/matchlz_exh_cd \
+		${BIN_DIR}/rosa_helping_functions.o ${BIN_DIR}/rosa_helping_structures.o ${BIN_DIR}/pattern_file.o \
+		${BIN_DIR}/bu_interval.o \
+		-lsdsl -ldivsufsort -ldivsufsort64
+
+${BIN_DIR}/matchlz_exh_cdr: ${BIN_DIR}/pattern_file.o ${BIN_DIR}/rosa_helping_functions.o ${BIN_DIR}/rosa_helping_structures.o ${BIN_DIR}/bu_interval.o ${SRC_DIR}/rosa_main.cpp
+	g++ ${CFLAGS} -I${INCLUDE_PATH} -L${LIB_PATH} -DLCP_WRAP=1 -DMATCH_EXH_CDR -DBENCH_MATCH \
+	    ${SRC_DIR}/rosa_main.cpp -o ${BIN_DIR}/matchlz_exh_cdr \
+		${BIN_DIR}/rosa_helping_functions.o ${BIN_DIR}/rosa_helping_structures.o ${BIN_DIR}/pattern_file.o \
+		${BIN_DIR}/bu_interval.o \
+		-lsdsl -ldivsufsort -ldivsufsort64
+
+${BIN_DIR}/matchlz_sa: ${BIN_DIR}/pattern_file.o ${BIN_DIR}/rosa_helping_functions.o ${BIN_DIR}/rosa_helping_structures.o ${BIN_DIR}/bu_interval.o ${SRC_DIR}/rosa_main.cpp
+	g++ ${CFLAGS} -I${INCLUDE_PATH} -L${LIB_PATH} -DLCP_WRAP=1 -DMATCH_SA -DBENCH_MATCH \
+	    ${SRC_DIR}/rosa_main.cpp -o ${BIN_DIR}/matchlz_sa \
+		${BIN_DIR}/rosa_helping_functions.o ${BIN_DIR}/rosa_helping_structures.o ${BIN_DIR}/pattern_file.o \
+		${BIN_DIR}/bu_interval.o \
+		-lsdsl -ldivsufsort -ldivsufsort64
+
+${BIN_DIR}/matchlz_mbmh_cd: ${BIN_DIR}/pattern_file.o ${BIN_DIR}/rosa_helping_functions.o ${BIN_DIR}/rosa_helping_structures.o ${BIN_DIR}/bu_interval.o ${SRC_DIR}/rosa_main.cpp
+	g++ ${CFLAGS} -I${INCLUDE_PATH} -L${LIB_PATH} -DLCP_WRAP=1 -DMATCH_MBMH_CD -DBENCH_MATCH \
+	    ${SRC_DIR}/rosa_main.cpp -o ${BIN_DIR}/matchlz_mbmh_cd \
 		${BIN_DIR}/rosa_helping_functions.o ${BIN_DIR}/rosa_helping_structures.o ${BIN_DIR}/pattern_file.o \
 		${BIN_DIR}/bu_interval.o \
 		-lsdsl -ldivsufsort -ldivsufsort64
