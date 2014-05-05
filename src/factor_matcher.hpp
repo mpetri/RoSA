@@ -400,7 +400,7 @@ struct factor_matcher_sa_smart {
         return std::make_tuple(factor, factor_pos, matched);
     }
     template <class t_itr>
-    static t_itr find_new_alignment(t_itr it,const std::vector<uint32_t>& sa,
+    static t_itr find_new_alignment(t_itr it, const std::vector<uint32_t>& sa,
                                     const std::vector<uint8_t>& PRev,
                                     const std::vector<uint8_t>& P)
     {
