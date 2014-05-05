@@ -1,5 +1,5 @@
- /*! This file contains the class for the external memory index rosa
- */
+/*! This file contains the class for the external memory index rosa
+*/
 #ifndef ROSA_INCLUDED
 #define ROSA_INCLUDED
 
@@ -54,24 +54,24 @@ template <class BitVector = bit_vector // for bl and bf
           ,
           class SelectSupport = typename BitVector::select_1_type // for bf
           ,
-          class WaveletTree = wt_huff
-          <bit_vector, rank_support_v5<>, select_support_mcl<1>,
-           select_support_mcl<0>> // for pruned BWT
+          class WaveletTree
+          = wt_huff<bit_vector, rank_support_v5<>, select_support_mcl<1>,
+                    select_support_mcl<0>> // for pruned BWT
 #if LCP_WRAP == 0
           ,
-          class LcpSerializeWrapper = int_vector_serialize_vbyte_wrapper
-          <> // int_vector_serialize_wrapper<>
+          class LcpSerializeWrapper
+          = int_vector_serialize_vbyte_wrapper<> // int_vector_serialize_wrapper<>
           ,
-          class LcpLoadWrapper = int_vector_load_vbyte_wrapper
-          <> // int_vector_load_wrapper<>
+          class LcpLoadWrapper
+          = int_vector_load_vbyte_wrapper<> // int_vector_load_wrapper<>
 #endif
 #if LCP_WRAP == 1
           ,
-          class LcpSerializeWrapper = int_vector_serialize_vlen_wrapper
-          <> // int_vector_serialize_wrapper<>
+          class LcpSerializeWrapper
+          = int_vector_serialize_vlen_wrapper<> // int_vector_serialize_wrapper<>
           ,
-          class LcpLoadWrapper = int_vector_load_vlen_wrapper
-          <> // int_vector_load_wrapper<>
+          class LcpLoadWrapper
+          = int_vector_load_vlen_wrapper<> // int_vector_load_wrapper<>
 #endif
           >
 class rosa;
@@ -136,8 +136,8 @@ private:
                           // the text
     sd_vector<> m_factor_border; // bitvector which marks every end of a sampled
                                  // factor in the text
-    sd_select_support
-        <> m_factor_border_select; // select support for m_factor_border
+    sd_select_support<> m_factor_border_select; // select support for
+                                                // m_factor_border
 
     string m_file_name;  // file name of the supported text
     string m_output_dir; // output directory
@@ -185,10 +185,7 @@ private:
         const bit_vector& bp_ct; // const reference to the balanced parentheses
 
         disk_block()
-            : header(m_header)
-            , lcp(m_lcp)
-            , sa(m_sa)
-            , bp_ct(m_bp_ct) {};
+            : header(m_header), lcp(m_lcp), sa(m_sa), bp_ct(m_bp_ct) {};
 
         size_type header_size_in_bytes()
         {
@@ -356,7 +353,7 @@ private:
         }
 
         //! Get the corresponding delta_x and delta_d values for a given
-        //backward id
+        // backward id
         /*! \param bwd_id   Backward id of the block (information from the
          *in-memory part).
          *  \param delta_x  Output reference for delta_x.
@@ -381,10 +378,7 @@ private:
         }
 
         //! Get the number of the block
-        size_type size() const
-        {
-            return m_sa.size();
-        }
+        size_type size() const { return m_sa.size(); }
 
         //! Write the block to the output stream
         size_type serialize(std::ostream& out, structure_tree_node* v = NULL,
@@ -433,8 +427,8 @@ private:
         } else {
             open_stream(m_glz_text, get_factorization_filename().c_str());
             {
-                int_vector_file_buffer
-                    <> glz_buffer(get_factorization_filename().c_str());
+                int_vector_file_buffer<> glz_buffer(
+                    get_factorization_filename().c_str());
                 m_lz_width = glz_buffer.int_width;
                 m_lz_size = glz_buffer.int_vector_size;
                 if (util::verbose) {
@@ -459,7 +453,7 @@ private:
     }
 
     //! Wrapper for the seekg method of ifstream that increases the disk access
-    //counter
+    // counter
     void seekg(ifstream& in, size_type block_addr, bool count = true) const
     {
         in.seekg(block_addr, std::ios::beg);
@@ -471,45 +465,45 @@ private:
     }
 
 public:
-    const bit_vector_type
-        & bf; //!< Bit vector which indicates intervals in the backward index.
-    const bit_vector_type
-        & bl; //!< Bit vector which contains the LF-permuted content of bf.
-    const wavelet_tree_type
-        & wt; //!< Wavelet tree holding the condensed BWT in the backward index.
+    const bit_vector_type& bf; //!< Bit vector which indicates intervals in the
+                               //backward index.
+    const bit_vector_type& bl; //!< Bit vector which contains the LF-permuted
+                               //content of bf.
+    const wavelet_tree_type& wt; //!< Wavelet tree holding the condensed BWT in
+                                 //the backward index.
     const rank_support_type& bl_rank;     //!< Rank support for bl.
     const rank_support_type& bf_rank;     //!< Rank support for bf.
     const select_support_type& bf_select; //!< Select support for bf.
     const select_support_type& bl_select; //!< Select support for bl.
     const bit_vector& bm; //!< Bit vector to map from intervals in the backward
-                          //index to blocks in the external part.
+    // index to blocks in the external part.
     const bm_select_1_type& bm_1_select; //!< Select support for ones in bm.
     const bm_select_0_type& bm_0_select; //!< Select support for zeros in bm.
-    const bm_rank10_type
-        & bm_10_rank; //!< Rank support for the bit-pattern 01 in bm.
-    const int_vector<>& min_depth; //!<
-    const int_vector<>& pointer;   //!< Array of pointers into the external
-                                   //structures (blocks or suffix array).
-    const string& file_name;       //!< File name of the original text string.
-    const string& output_dir;      //!< Directory where the output is stored.
-    const size_type& k;            //!< Number of block prefixes.
-    const uint8_t& lz_width;       //!< Bit-width of the LZ factors
-    const size_type& fac_dens;      //!< Sample density of the suffixes
+    const bm_rank10_type& bm_10_rank; //!< Rank support for the bit-pattern 01
+                                      //in bm.
+    const int_vector<>& min_depth;    //!<
+    const int_vector<>& pointer;      //!< Array of pointers into the external
+    // structures (blocks or suffix array).
+    const string& file_name;   //!< File name of the original text string.
+    const string& output_dir;  //!< Directory where the output is stored.
+    const size_type& k;        //!< Number of block prefixes.
+    const uint8_t& lz_width;   //!< Bit-width of the LZ factors
+    const size_type& fac_dens; //!< Sample density of the suffixes
 #ifdef OUTPUT_STATS
-    const size_type
-        & count_disk_access; //!< Counter for potential disk accesses.
+    const size_type& count_disk_access;     //!< Counter for potential disk
+                                            //accesses.
     const size_type& count_gap_disk_access; //!< Counter for potential disk
-                                            //accesses caused by gaps in the
-                                            //fringe.
-    const size_type& count_int_steps;       //!< Counter for matches that can be
-                                      //answered with the in-memory part of the
-                                      //data structure.
+    // accesses caused by gaps in the
+    // fringe.
+    const size_type& count_int_steps; //!< Counter for matches that can be
+    // answered with the in-memory part of the
+    // data structure.
     const size_type& count_int_match; //!< Counter for matches that can be
-                                      //answered with the in-memory part of the
-                                      //data structure.
-    const size_type& count_queries;   //!< Counter for the queries.
+    // answered with the in-memory part of the
+    // data structure.
+    const size_type& count_queries;      //!< Counter for the queries.
     const size_type& count_block_length; //!< The sum of the length of all
-                                         //fetched blocks in elements.
+// fetched blocks in elements.
 #endif
 
     ~rosa()
@@ -521,13 +515,9 @@ public:
         if (NULL != m_buf_lz) delete[] m_buf_lz;
     }
 
-    bool matchlz_performed() const {
-        return m_matchlz_performed;
-    } 
+    bool matchlz_performed() const { return m_matchlz_performed; }
 
-    matchlz_stats matchlz_statistics() const {
-        return m_mlz_stats;
-    } 
+    matchlz_stats matchlz_statistics() const { return m_mlz_stats; }
 
     //! Get the name of the file where the external part of the index is stored.
     static string get_ext_idx_filename(const char* file_name, size_type b,
@@ -589,7 +579,7 @@ public:
 
 
     //! Get the name of the file where the in-memory part of the index is
-    //stored.
+    // stored.
     static string get_int_idx_filename(const char* file_name, size_type b,
                                        size_type fac_dens,
                                        const char* output_dir = NULL)
@@ -601,7 +591,7 @@ public:
     }
 
     //! Get the name of the file where the in-memory part of the index is
-    //stored.
+    // stored.
     string get_int_idx_filename()
     {
         return get_int_idx_filename(m_file_name.c_str(), m_b, m_fac_dens,
@@ -676,8 +666,8 @@ public:
                      i < j and j < text.size(); ++i, --j) {
                     std::swap(text[i], text[j]);
                 }
-                util::store_to_plain_array
-                    <uint8_t>(text, rev_file_name.c_str());
+                util::store_to_plain_array<uint8_t>(text,
+                                                    rev_file_name.c_str());
             }
             cache_config config(delete_tmp, tmp_dir,
                                 (util::basename(rev_file_name)));
@@ -862,9 +852,10 @@ public:
             cout << "fwd_id <-> bwd_id mapping was calculated.\n";
     }
 
-    void calculate_headers(const vector<block_node>& v_block,
-                           const vector<block_info>& map_info, vector
-                           <vector<header_item>>& header_of_external_block)
+    void
+    calculate_headers(const vector<block_node>& v_block,
+                      const vector<block_info>& map_info,
+                      vector<vector<header_item>>& header_of_external_block)
     {
         for (size_t fwd_id = 0; fwd_id < v_block.size(); ++fwd_id) {
             size_type bwd_id = v_block[fwd_id].bwd_id;
@@ -872,8 +863,8 @@ public:
                 size_type dest_block = v_block[fwd_id].dest_block;
                 size_type delta_x = v_block[fwd_id].delta_x;
                 size_type delta_d = v_block[fwd_id].delta_d;
-                header_of_external_block[dest_block]
-                    .push_back(header_item(bwd_id, delta_x, delta_d));
+                header_of_external_block[dest_block].push_back(
+                    header_item(bwd_id, delta_x, delta_d));
             }
         }
         if (util::verbose) cout << "Header for external block calculated.\n";
@@ -965,13 +956,13 @@ public:
                         lcp_buf[i] = get_next_int(lcp_stream, lcp_width,
                                                   lcp_off, lcp_word);
                         //                          if (
-                        //lcp_buf[i] != lcp[lcp_idx] ){
+                        // lcp_buf[i] != lcp[lcp_idx] ){
                         //                              cout<<"ERROR:
-                        //i="<<i<<" lcp_idx="<<lcp_idx<<"
-                        //lcp_width="<<(int)lcp_width<<"
-                        //lcp_off="<<(int)lcp_off<<endl;
+                        // i="<<i<<" lcp_idx="<<lcp_idx<<"
+                        // lcp_width="<<(int)lcp_width<<"
+                        // lcp_off="<<(int)lcp_off<<endl;
                         //                              cout<<"lcp_buf[i]="<<lcp_buf[i]<<"
-                        //lcp[lcp_idx]="<<lcp[lcp_idx]<<endl;
+                        // lcp[lcp_idx]="<<lcp[lcp_idx]<<endl;
                         //                          }
                     }
                     size_type block_len = rb - lb + 1;
@@ -1122,7 +1113,8 @@ public:
      *block.
      *  \param output_tikz      Indicates if latex output should be produced for
      *the internal and
-     *                          external part (so backward and forward part) of the index.
+     *                          external part (so backward and forward part) of
+     *the index.
      *The output
      *                          is stored in the files file_name.fwd_idx.tex and
      *file_name.bwd_idx.tex.
@@ -1138,36 +1130,21 @@ public:
          size_type f_fac_dens = 1, bool output_tikz = false,
          bool delete_tmp = false, const char* tmp_file_dir = "./",
          const char* output_dir = NULL)
-        : m_b(b)
-        , m_buf(NULL)
-        , m_buf_lz(NULL)
-        , m_buf_size(1024)
-        , m_fac_dens(f_fac_dens)
-        , bl(m_bl)
-        , bf(m_bf)
-        , wt(m_wt)
-        , bl_rank(m_bl_rank)
-        , bf_rank(m_bf_rank)
-        , bf_select(m_bf_select)
-        , bl_select(m_bl_select)
-        , bm(m_bm)
-        , bm_1_select(m_bm_1_select)
-        , bm_0_select(m_bm_0_select)
-        , bm_10_rank(m_bm_10_rank)
-        , min_depth(m_min_depth)
-        , pointer(m_pointer)
-        , file_name(m_file_name)
-        , output_dir(m_output_dir)
-        , k(m_k)
-        , lz_width(m_lz_width)
-        , fac_dens(m_fac_dens)
+        : m_b(b), m_buf(NULL), m_buf_lz(NULL), m_buf_size(1024),
+          m_fac_dens(f_fac_dens), bl(m_bl), bf(m_bf), wt(m_wt),
+          bl_rank(m_bl_rank), bf_rank(m_bf_rank), bf_select(m_bf_select),
+          bl_select(m_bl_select), bm(m_bm), bm_1_select(m_bm_1_select),
+          bm_0_select(m_bm_0_select), bm_10_rank(m_bm_10_rank),
+          min_depth(m_min_depth), pointer(m_pointer), file_name(m_file_name),
+          output_dir(m_output_dir), k(m_k), lz_width(m_lz_width),
+          fac_dens(m_fac_dens)
 #ifdef OUTPUT_STATS
-        , count_disk_access(m_count_disk_access)
-        , count_gap_disk_access(m_count_gap_disk_access)
-        , count_int_steps(m_count_int_steps)
-        , count_int_match(m_count_int_match)
-        , count_queries(m_count_queries)
-        , count_block_length(m_count_block_length)
+          ,
+          count_disk_access(m_count_disk_access),
+          count_gap_disk_access(m_count_gap_disk_access),
+          count_int_steps(m_count_int_steps),
+          count_int_match(m_count_int_match), count_queries(m_count_queries),
+          count_block_length(m_count_block_length)
 #endif
     {
         m_buf = new unsigned char[m_buf_size]; // initialise buffer for pattern
@@ -1296,7 +1273,7 @@ public:
         m_comp2char = bwd_csa.comp2char;
         m_char2comp = bwd_csa.char2comp;
         //          (4) Create m_bl, m_bf and the mapping between
-        //fwd_ids and bwd_ids
+        // fwd_ids and bwd_ids
         vector<block_info> map_info;
         write_R_output("bl,bf and bwd_id<->fwd_id mapping", "construct",
                        "begin");
@@ -1371,7 +1348,7 @@ public:
             greedy_parse(tmp_dir, factor_borders, fac_dens);
             write_R_output("parse", "construct", "end");
             //          (14) Replace SA text pointers by SA LZ-text
-            //pointers
+            // pointers
             write_R_output("ext_idx", "replace_pointers", "begin");
             replace_pointers(factor_borders, is_singleton,
                              get_tmp_ext_idx_filename());
@@ -1390,8 +1367,8 @@ public:
         if (m_fac_dens > 0) {
             string out_name = ("./" + util::basename(m_file_name) + ".lz.txt");
             ofstream text_out(out_name.c_str());
-            int_vector_file_buffer
-                <> glz_buf(get_factorization_filename().c_str());
+            int_vector_file_buffer<> glz_buf(
+                get_factorization_filename().c_str());
             for (size_type i = 0, r = 0, r_sum = 0;
                  i < glz_buf.int_vector_size;) {
                 for (; i < r + r_sum; ++i) {
@@ -1438,8 +1415,8 @@ public:
             ofstream res_out(out_name.c_str());
             std::vector<size_type> freq(m_k, 0);
             size_type max_freq = 0;
-            int_vector_file_buffer
-                <> glz_buf(get_factorization_filename().c_str());
+            int_vector_file_buffer<> glz_buf(
+                get_factorization_filename().c_str());
             for (size_type i = 0, r = 0, r_sum = 0;
                  i < glz_buf.int_vector_size;) {
                 for (; i < r + r_sum; ++i) {
@@ -1508,8 +1485,9 @@ public:
             old_pointer_to_new[p_old] = p_new;
             disk_block db;
             db.load(tmp_ext_idx); // load block
-            //              p_old += (uint64_t)util::get_size_in_bytes(db);  // this
-            //does not work???
+            //              p_old += (uint64_t)util::get_size_in_bytes(db);  //
+            // this
+            // does not work???
             p_old += db.serialize(ns);
             db.replace_pointers(factor_borders_rank);
             p_new += db.serialize(ext_idx);
@@ -1526,7 +1504,7 @@ public:
     }
 
     //! Calculate the id of a block in the backward index using its left bound
-    //and depth.
+    // and depth.
     /*!
      *  \param lb       The left bound of the block in the backward
      *index.
@@ -1656,8 +1634,9 @@ public:
                             shorter_pattern += delta_d;
                             //                              if ( trb+1-tlb == 1
                             //){
-                            //                                  // TODO: it is possible to check
-                            //the text here with only one disk access
+                            //                                  // TODO: it is
+                            // possible to check
+                            // the text here with only one disk access
                             //                              }
                         } else {
                             return 0;
@@ -1684,12 +1663,13 @@ public:
     }
 
     //! Match the pattern p reversed backwards against the pruned BWT until the
-    //interval <= b.
+    // interval <= b.
     /*! \param pattern  Pointer to the beginning of the pattern.
      *  \param m        The length of the pattern.
      *  \param lb       Left bound of the resulting interval in the backward
      *index.
-     *  \param rb       Right bound of the resulting interval in the backward index
+     *  \param rb       Right bound of the resulting interval in the backward
+     *index
      *(inclusive).
      *  \param d        Number of matched characters.
      *  \return         True if the pattern can occur in T and false
@@ -1844,10 +1824,7 @@ public:
         }
     }
 
-    size_type size() const
-    {
-        return m_n;
-    }
+    size_type size() const { return m_n; }
 
     void write_factor(uint64_t factor, ofstream& out, uint8_t num_bytes)
     {
@@ -1882,8 +1859,8 @@ public:
             ifstream test_factor_stream(get_factorization_filename().c_str());
             if (test_factor_stream) {
                 test_factor_stream.close();
-                int_vector_file_buffer
-                    <> factor_file_buf(get_factorization_filename().c_str());
+                int_vector_file_buffer<> factor_file_buf(
+                    get_factorization_filename().c_str());
                 m_lz_width = factor_file_buf.int_width;
                 std::cout << "greedy_parse: factor width = " << (int)m_lz_width
                           << std::endl;
@@ -1984,16 +1961,12 @@ public:
     struct item {
         size_type d, lb, rb;
         item(size_type _d, size_type _lb, size_type _rb)
-            : d(_d)
-            , lb(_lb)
-            , rb(_rb) {};
+            : d(_d), lb(_lb), rb(_rb) {};
     };
     struct block_item {
         size_type block_addr, bwd_id, size;
         block_item(size_type _block_addr, size_type _bwd_id, size_type _size)
-            : block_addr(_block_addr)
-            , bwd_id(_bwd_id)
-            , size(_size) {};
+            : block_addr(_block_addr), bwd_id(_bwd_id), size(_size) {};
         bool operator<(const block_item& x) const
         {
             if (block_addr != x.block_addr) return block_addr < x.block_addr;
@@ -2103,9 +2076,9 @@ public:
         typedef bp_interval<size_type> node_type;
 
     private:
-        const disk_block* m_db; // pointer to the disk_block
-        bp_support_sada
-            <> m_bp_ct_support; // balanced parentheses support for m_bp_ct
+        const disk_block* m_db;            // pointer to the disk_block
+        bp_support_sada<> m_bp_ct_support; // balanced parentheses support for
+                                           // m_bp_ct
 
         // Get the first l index of a [i,j] interval.
         /* I.e. given an interval [i,j], the function returns the position of
@@ -2135,7 +2108,7 @@ public:
         inline size_type nsv(size_type i, size_type ipos,
                              const bp_support_sada<>& bp_support) const
         { // possible optimization: calculate also position of nsv, i.e. next (
-          // following position cipos
+            // following position cipos
             size_type cipos = bp_support.find_close(ipos);
             size_type result = bp_support.rank(cipos);
             return result;
@@ -2190,10 +2163,7 @@ public:
         }
 
         //! Decide if a node is a leaf.
-        bool is_leaf(const node_type& v) const
-        {
-            return v.i == v.j;
-        }
+        bool is_leaf(const node_type& v) const { return v.i == v.j; }
 
         bool is_root(const node_type& v) const
         {
@@ -2209,7 +2179,7 @@ public:
                     std::cout << " " << m_db->lcp[i];
                 }
                 std::cout << std::endl;
-                //std::cout << "m_bp_ct=" << m_db->bp_ct;
+                // std::cout << "m_bp_ct=" << m_db->bp_ct;
             }
         }
 
@@ -2283,8 +2253,8 @@ public:
                 if (v_bit_depth >= (depth + m) * 8) {
                     return rb - lb + 1;
                 }
-                unsigned char pc =
-                    *(pattern + (v_bit_depth / 8 - depth)); // pattern char
+                unsigned char pc
+                    = *(pattern + (v_bit_depth / 8 - depth)); // pattern char
                 if ((pc >> (7 - (v_bit_depth % 8)))
                     & 1) { // 1-bit at depth v_bit_depth in the pattern
                     // => go to the right child in the tree
@@ -2299,19 +2269,18 @@ public:
             return 0;
         }
 
-        size_type size() const
-        {
-            return m_db->lcp.size();
-        }
+        size_type size() const { return m_db->lcp.size(); }
     };
 
     //! Search for a pattern in the block
     /*!
      * \param pattern    Pointer to the remaining pattern.
-     * \param m          Number of not yet matched characters. Equals the length of
+     * \param m          Number of not yet matched characters. Equals the length
+     *of
      *the remaining pattern.
      * \param depth      Number of characters matched so far.
-     * \param size       Size of the lexicographic interval of the already matched
+     * \param size       Size of the lexicographic interval of the already
+     *matched
      *prefix.
      * \param bwd_id     bwd_id of the matched prefix.
      * \param block_addr Start address of the block in the external index.
@@ -2448,13 +2417,13 @@ public:
     }
 
     //! Replaces the pointers to factors by positions in the text where the
-    //pattern occurs
+    // pattern occurs
     void replace_pointers_by_positions(const unsigned char* pattern,
                                        size_type m, vector<size_type>& res,
                                        size_type block_addr = 0) const
     {
         //          if ( util::verbose )
-        //cout<<"replace_pointers_by_positions("<<pattern<<","<<m<<",res.size="<<res.size()<<")"<<endl;
+        // cout<<"replace_pointers_by_positions("<<pattern<<","<<m<<",res.size="<<res.size()<<")"<<endl;
         // cout<<"replace_pointers_by_positions("<<pattern<<","<<m<<",res.size="<<res.size()<<","<<block_addr<<")"<<endl;
         sort(res.begin(), res.end()); // sort pointers
         // calculate KMP table
@@ -2472,8 +2441,8 @@ public:
             // determine for many occurrences lie in the region the pointer
             // refers to
             size_type occs = 1;
-            while (++fs
-                   < factor_sample_pointer.size() and factor_sample_pointer[fs]
+            while (++fs < factor_sample_pointer.size()
+                          and factor_sample_pointer[fs]
                    == factor_sample_pointer[fs - occs]) {
                 ++occs;
             }
@@ -2485,7 +2454,8 @@ public:
             // cout<<"rank("<<m_factor_border.size()<<")="<<rank(m_factor_border.size())<<endl;
             // cout<<"factor_sample_pointer[fs-occs]="<<factor_sample_pointer[fs-occs]<<"
             // / "<<sampled_factors<<endl;
-            //              if ( factor_sample_pointer[fs-occs] >= sampled_factors
+            //              if ( factor_sample_pointer[fs-occs] >=
+            // sampled_factors
             //){
             //                  cout<<"Ooops"<<endl;
             //                  return;
@@ -2684,11 +2654,11 @@ public:
         char test_next;
         util::read_member(test_next, in);
 
-        //std::cerr << "m_b = " << m_b << std::endl;
-        //std::cerr << "m_fac_dens = " << m_fac_dens << std::endl;
+        // std::cerr << "m_b = " << m_b << std::endl;
+        // std::cerr << "m_fac_dens = " << m_fac_dens << std::endl;
 
         if (m_fac_dens > 0 and in.eof()) {
-            //cerr << "m_factor_border does not exists. Try to create it."
+            // cerr << "m_factor_border does not exists. Try to create it."
             //     << endl;
             bit_vector factor_border;
             if (util::load_from_file(factor_border,
@@ -2708,7 +2678,7 @@ public:
                     m_factor_border.swap(temp);
                 }
                 util::init_support(m_factor_border_select, &m_factor_border);
-                //cerr << "m_factor_border generated" << endl;
+                // cerr << "m_factor_border generated" << endl;
             } else {
                 cerr << "could not create m_factor_border; file "
                      << get_factor_border_filename() << " does not exist."
@@ -2836,7 +2806,7 @@ public:
     }
 
     //! Check if pattern is a prefix of a suffix starting in the factor
-    //lz_offset
+    // lz_offset
     /* \param pattern       A pointer to the start of the pattern.
      * \param m             Length of the pattern.
      * \param lz_offset     Index to the factor
@@ -2848,49 +2818,52 @@ public:
         using timer = std::chrono::high_resolution_clock;
         using namespace std::chrono;
 
-        factor_store<decltype(*this)> factor_text(*this,lz_offset,m);
+        factor_store<decltype(*this)> factor_text(*this, lz_offset, m);
         std::vector<uint8_t> P;
-        for(size_t i=0;i<m;i++) P.push_back(pattern[i]);
+        for (size_t i = 0; i < m; i++) P.push_back(pattern[i]);
 
         bool match = false;
 
         auto match_start = timer::now();
 #if defined(MATCH_KMP)
         m_mlz_stats.method = factor_matcher_kmp::name();
-        match = factor_matcher_kmp::match(factor_text,P);
+        match = factor_matcher_kmp::match(factor_text, P);
 #elif defined(MATCH_BMH)
         m_mlz_stats.method = factor_matcher_bmh::name();
-        match = factor_matcher_bmh::match(factor_text,P);
+        match = factor_matcher_bmh::match(factor_text, P);
 #elif defined(MATCH_BMH_CD)
         m_mlz_stats.method = factor_matcher_bmh_cd::name();
-        match = factor_matcher_bmh_cd::match(factor_text,P);
+        match = factor_matcher_bmh_cd::match(factor_text, P);
 #elif defined(MATCH_EXH)
         m_mlz_stats.method = factor_matcher_exhaustive::name();
-        match = factor_matcher_exhaustive::match(factor_text,P);
+        match = factor_matcher_exhaustive::match(factor_text, P);
 #elif defined(MATCH_EXH_CD)
         m_mlz_stats.method = factor_matcher_exhaustive_cd::name();
-        match = factor_matcher_exhaustive_cd::match(factor_text,P);
+        match = factor_matcher_exhaustive_cd::match(factor_text, P);
 #elif defined(MATCH_EXH_CDR)
         m_mlz_stats.method = factor_matcher_exhaustive_cdr::name();
-        match = factor_matcher_exhaustive_cdr::match(factor_text,P);
+        match = factor_matcher_exhaustive_cdr::match(factor_text, P);
 #elif defined(MATCH_SA)
         m_mlz_stats.method = factor_matcher_sa_smart::name();
-        match = factor_matcher_sa_smart::match(factor_text,P);
+        match = factor_matcher_sa_smart::match(factor_text, P);
 #elif defined(MATCH_MBMH_CD)
         m_mlz_stats.method = factor_matcher_mbmh_cd::name();
-        match = factor_matcher_mbmh_cd::match(factor_text,P);
+        match = factor_matcher_mbmh_cd::match(factor_text, P);
 #else
         m_mlz_stats.method = factor_matcher_kmp::name();
-        match = factor_matcher_kmp::match(factor_text,P);
+        match = factor_matcher_kmp::match(factor_text, P);
 #endif
         auto match_stop = timer::now();
         factor_text.match_stats(m_mlz_stats);
-        m_mlz_stats.match_time = duration_cast<microseconds>(match_stop-match_start);
+        m_mlz_stats.match_time
+            = duration_cast<microseconds>(match_stop - match_start);
 
         return match;
     }
 
-    void read_factor_ids(sdsl::int_vector<>& buf,size_t lz_offset,size_t m) const {
+    void read_factor_ids(sdsl::int_vector<>& buf, size_t lz_offset, size_t m)
+        const
+    {
         size_t lz_bit_offset = m_lz_width * lz_offset;
         seekg(m_glz_text, ((lz_bit_offset) / 64) * 8 + 9);
         size_t len
@@ -2904,20 +2877,24 @@ public:
         }
 
         buf.set_int_width(m_lz_width);
-        buf.resize(m +m_fac_dens-1);
-        m_glz_text.read((char*)m_buf_lz, 8*len);
-        uint8_t bit_offset = lz_bit_offset&0x3F;
-        const uint64_t *word = m_buf_lz;
-        size_t i=0;
-        while ( word < m_buf_lz+len-1 or (word == m_buf_lz+len-1 and bit_offset+m_lz_width <= 64) ) {
-            uint64_t factor_id = bit_magic::read_int_and_move(word, bit_offset, m_lz_width);
+        buf.resize(m + m_fac_dens - 1);
+        m_glz_text.read((char*)m_buf_lz, 8 * len);
+        uint8_t bit_offset = lz_bit_offset & 0x3F;
+        const uint64_t* word = m_buf_lz;
+        size_t i = 0;
+        while (word < m_buf_lz + len
+                      - 1 or(word == m_buf_lz + len - 1 and bit_offset
+                                     + m_lz_width <= 64)) {
+            uint64_t factor_id
+                = bit_magic::read_int_and_move(word, bit_offset, m_lz_width);
             buf[i++] = factor_id;
-            if(i == buf.size()) break;
+            if (i == buf.size()) break;
         }
     }
 
-    std::tuple<size_type,uint8_t,size_type>
-    decode_factor_id(size_t bwd_id) const { 
+    std::tuple<size_type, uint8_t, size_type> decode_factor_id(size_t bwd_id)
+        const
+    {
         size_t zero_pos = m_bm_0_select(bwd_id + 1);
         size_t ones = zero_pos - bwd_id; // ones in bm[0..zero_pos)
         size_t depth_idx = m_bm_10_rank(zero_pos + 1);
@@ -2929,14 +2906,14 @@ public:
         }
         size_t lb = m_bf_select(ones + 1);
         uint8_t c = first_row_character(lb);
-        return std::make_tuple(depth,c,lb);
+        return std::make_tuple(depth, c, lb);
     }
 
-    size_t
-    decode_syms(size_t lb,size_t n,std::vector<uint8_t>::reverse_iterator out) const
+    size_t decode_syms(size_t lb, size_t n,
+                       std::vector<uint8_t>::reverse_iterator out) const
     {
         uint8_t c = first_row_character(lb);
-        for(size_t i=0;i<n;i++) {
+        for (size_t i = 0; i < n; i++) {
             size_t c_rank = m_bf_rank(lb) + m_bf[lb] - m_cC[m_char2comp[c]];
             size_t cpos = m_wt.select(c_rank, c);
             lb = m_bl_select(cpos + 1);
