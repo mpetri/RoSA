@@ -1395,6 +1395,29 @@ public:
         }
     }
 
+    //! Reconstruct text from the factorization and the condensed BWT
+    void extract_factor_lens()
+    {
+        if (m_fac_dens > 0) {
+            int_vector_file_buffer<> glz_buf(get_factorization_filename().c_str());
+            for (size_type i = 0, r = 0, r_sum = 0;
+                 i < glz_buf.int_vector_size;) {
+                for (; i < r + r_sum; ++i) {
+                    auto bwt_id = glz_buf[i - r_sum];
+                    if(bwt_id != 0) {
+                      auto factor_data = decode_factor_id(bwt_id);
+                      std::cout << m_b << ";" << std::get<0>(factor_data) << "\n";
+                    }
+                }
+                r_sum += r;
+                r = glz_buf.load_next_block();
+            }
+        } else {
+            cout << "No factorization is used, so we can not reconstruct the "
+                    "text" << endl;
+        }
+    }
+
     void output_factors()
     {
         string out_name = ("./" + util::basename(m_file_name) + ".all_factors");

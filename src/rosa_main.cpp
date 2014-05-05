@@ -298,6 +298,33 @@ void benchmark_factorlen(const char* file_name, size_type b, size_type fac_dens,
               << std::endl;
 }
 
+template <class tIndex>
+void output_factor_lens(const char* file_name, size_type b, size_type fac_dens,
+                       const char* pattern_file_name, const char* tmp_file_dir,
+                       const char* output_dir,
+                       bool repeated_in_memory_search = false,
+                       bool only_in_memory = false,
+                       bool only_external_memory = false,
+                       bool locate_queries = false)
+{
+    {
+        tIndex index;
+        generate_index(index, file_name, b, fac_dens, false, false,
+                       tmp_file_dir, output_dir);
+    }
+    /* load */
+    tIndex index;
+    string int_idx_file_name
+        = tIndex::get_int_idx_filename(file_name, b, fac_dens, output_dir);
+    util::load_from_file(index, int_idx_file_name.c_str());
+    index.set_file_name(string(file_name));
+    index.set_output_dir(string(output_dir));
+
+    index.extract_factor_lens();
+
+}
+
+
 
 template <class tIndex>
 void benchmark(const char* file_name, size_type b, size_type fac_dens,
@@ -532,6 +559,7 @@ int main(int argc, char* argv[])
     int run_benchmark_factorlen = 0;
     int run_benchmark_int = 0;
     int run_benchmark_ext = 0;
+    int output_factorlens = 0;
     int locate_queries = 0;
     int generate_patterns = 0;
     int do_generate_index = 0;
@@ -570,6 +598,7 @@ int main(int argc, char* argv[])
                {"benchmark", no_argument, &run_benchmark, 1},
                {"benchmark_matchlz", no_argument, &run_benchmark_matchlz, 1},
                {"benchmark_factorlen", no_argument, &run_benchmark_factorlen, 1},
+               {"output_factorlens", no_argument, &output_factorlens, 1},
                {"benchmark_int", no_argument, &run_benchmark_int, 1},
                {"benchmark_ext", no_argument, &run_benchmark_ext, 1},
                {"benchmark_loc", no_argument, &locate_queries, 1},
@@ -823,6 +852,15 @@ int main(int argc, char* argv[])
         // std::cerr << "run benchmark_matchlz" << std::endl;
         // std::cerr << "pattern_file_name " << pattern_file_name << std::endl;
         benchmark_factorlen<tIDX>(
+            input_file_name.c_str(), b, fac_dens, pattern_file_name.c_str(),
+            tmp_file_dir.c_str(), output_dir.c_str(), repeated_in_memory_search,
+            run_benchmark_int, run_benchmark_ext, locate_queries);
+    }
+
+    if (output_factorlens) {
+        // std::cerr << "run benchmark_matchlz" << std::endl;
+        // std::cerr << "pattern_file_name " << pattern_file_name << std::endl;
+        output_factor_lens<tIDX>(
             input_file_name.c_str(), b, fac_dens, pattern_file_name.c_str(),
             tmp_file_dir.c_str(), output_dir.c_str(), repeated_in_memory_search,
             run_benchmark_int, run_benchmark_ext, locate_queries);
