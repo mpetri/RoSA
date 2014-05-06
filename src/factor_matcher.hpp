@@ -90,6 +90,12 @@ struct factor_matcher_helper {
         divsufsort(P.data(), (int32_t*)sa.data(), m);
         return sa;
     }
+    static std::vector<uint32_t> calculate_isa(const std::vector<uint32_t>& SA)
+    {
+        std::vector<uint32_t> isa(SA.size());
+        for(size_t i=0;i<SA.size();i++) isa[SA[i]] = i;
+        return isa;
+    }
     static size_t search_sa(const std::vector<uint32_t>& sa,
                             const std::vector<uint8_t>& T,
                             const std::vector<uint8_t>& P, size_t cur_alignment)
@@ -183,6 +189,100 @@ struct factor_matcher_helper {
         }
         return shift;
     }
+    static size_t search_sa(const std::vector<uint32_t>& sa,
+                            const std::vector<uint32_t>& isa,
+                            const std::vector<uint8_t>& T,
+                            const std::vector<uint8_t>& P, size_t cur_alignment)
+    {
+        typedef std::vector<uint32_t>::value_type value_type;
+        size_t sp = 0;
+        size_t ep = sa.size() - 1;
+        size_t pos = P.size() - 1;
+        size_t matched = 0;
+
+        // SA comparison function
+        struct sa_cmp {
+            const std::vector<uint8_t>& T;
+            size_t offset;
+            sa_cmp(const std::vector<uint8_t>& _T, size_t o) : T(_T), offset(o)
+            {
+            }
+            bool operator()(const value_type& a, uint8_t sym)
+            {
+                if (offset + a >= T.size()) return true;
+                if (T[offset + a] < sym) return true;
+                return false;
+            }
+            bool operator()(uint8_t sym, const value_type& a)
+            {
+                if (offset + a >= T.size()) return false;
+                if (sym < T[offset + a]) return true;
+                return false;
+            }
+        };
+
+        size_t prefix_len = 0;
+        while (matched < P.size()) {
+            auto range = std::equal_range(sa.begin() + sp, sa.begin() + ep + 1,
+                                          P[pos], sa_cmp(T, matched));
+            if (range.first != sa.begin() + ep + 1
+                && std::distance(range.first, range.second) > 0) {
+                matched++;
+                sp = std::distance(sa.begin(), range.first);
+                ep = std::distance(sa.begin(), range.second) - 1;
+
+                // prefix check
+                auto ppos = isa[sa.size() - matched];
+                if(sp <= ppos && ppos <= ep) {
+                    prefix_len = matched;
+                }
+            } else {
+                break;
+            }
+            pos--;
+        }
+
+        /* calculate shift */
+        size_t shift = cur_alignment + 1;
+        if (matched == P.size()) {
+            /* complete match */
+            if ((ep + 1 - sp) > 1) {
+                for (size_t i = sp; i <= ep; i++) {
+                    size_t pos = T.size() - sa[i] - P.size();
+                    if (pos < cur_alignment) {
+                        shift = std::min(shift, cur_alignment - pos);
+                    }
+                }
+            } else {
+                size_t revpos_of_factor = T.size() - cur_alignment - 1
+                                          - (P.size() - 1);
+                bool aligned = true;
+                for (size_t i = 0; i < P.size(); i++) {
+                    if (T[revpos_of_factor + i] != P[P.size() - 1 - i])
+                        aligned = false;
+                }
+                if (aligned) {
+                    shift = cur_alignment + 1;
+                } else {
+                    size_t new_align_pos = T.size() - sa[sp] - P.size();
+                    if (cur_alignment > new_align_pos) {
+                        shift = cur_alignment - new_align_pos;
+                    } else {
+                        shift = cur_alignment + 1;
+                    }
+                }
+            }
+        } else {
+            if (prefix_len) {
+                shift = cur_alignment + (P.size() - prefix_len);
+            } else {
+                // no prefix match. move past complete factor
+                shift = cur_alignment + P.size();
+            }
+        }
+        return shift;
+    }
+
 };
 
 struct factor_matcher_exhaustive {
@@ -497,6 +597,85 @@ struct factor_matcher_mbmh_cd {
         return false;
     }
 };
+
+
+struct factor_matcher_sa_fast {
+    static std::string name() { return "SA-F"; }
+    template <class t_itr>
+    static std::tuple<std::vector<uint8_t>, size_t, bool>
+    determine_factor(const t_itr& it, const std::vector<uint8_t>& P)
+    {
+        std::vector<uint8_t> factor;
+        auto itr = it + (P.size() - 1);
+        auto factor_pos = 0;
+        bool found = false;
+        bool finished = false;
+        bool matched = true;
+        size_t j = P.size() - 1;
+        while (itr != it) {
+            if (itr.is_decoded()) {
+                found = true;
+                factor.insert(factor.begin(), *itr);
+                factor_pos = std::distance(it, itr);
+                if (*itr != P[j]) matched = false;
+            } else {
+                if (!factor.empty()) {
+                    finished = true;
+                    break;
+                }
+            }
+            j--;
+            --itr;
+        }
+        if (itr == it && !finished) { // does it extend into the first sym?
+            factor.insert(factor.begin(), *it);
+            if (*it != P[0]) matched = false;
+            factor_pos = 0;
+        }
+        return std::make_tuple(factor, factor_pos, matched);
+    }
+    template <class t_itr>
+    static t_itr find_new_alignment(t_itr it, 
+                                    const std::vector<uint32_t>& sa,
+                                    const std::vector<uint32_t>& isa,
+                                    const std::vector<uint8_t>& PRev,
+                                    const std::vector<uint8_t>& P)
+    {
+        /* (1) find the rightmost factor to align with P */
+        auto factor_data = determine_factor(it, P);
+        auto factor = std::get<0>(factor_data);
+        auto factor_pos = std::get<1>(factor_data);
+        auto factor_matched = std::get<2>(factor_data);
+
+        /* (2) calculate the new position */
+        auto shift
+            = factor_matcher_helper::search_sa(sa,isa, PRev, factor, factor_pos);
+
+        return it + shift;
+    }
+    template <class t_idx>
+    static bool match(factor_store<t_idx>& T, const std::vector<uint8_t>& P)
+    {
+        auto PRev = P;
+        std::reverse(std::begin(PRev), std::end(PRev));
+        auto sa = factor_matcher_helper::calculate_sa(PRev);
+        auto isa = factor_matcher_helper::calculate_isa(sa);
+
+        auto start = T.begin();
+        auto itr = start;
+        while (itr.cur_factor() <= T.last_regular_factor()) {
+            if (factor_matcher_helper::match_decoded(itr, P)) {
+                if (factor_matcher_helper::match_rightfocus(itr, P)) {
+                    return true;
+                }
+            }
+            itr = find_new_alignment(itr, sa, isa, PRev, P);
+        }
+
+        return false;
+    }
+};
+
 
 
 #endif

@@ -2869,6 +2869,9 @@ public:
 #elif defined(MATCH_SA)
         m_mlz_stats.method = factor_matcher_sa_smart::name();
         match = factor_matcher_sa_smart::match(factor_text, P);
+#elif defined(MATCH_SAF)
+        m_mlz_stats.method = factor_matcher_sa_fast::name();
+        match = factor_matcher_sa_fast::match(factor_text, P);
 #elif defined(MATCH_MBMH_CD)
         m_mlz_stats.method = factor_matcher_mbmh_cd::name();
         match = factor_matcher_mbmh_cd::match(factor_text, P);

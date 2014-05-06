@@ -14,6 +14,7 @@ all: ${BIN_DIR}/rosa_helping_structures.o \
 	 ${BIN_DIR}/matchlz_bmh \
 	 ${BIN_DIR}/matchlz_exh \
 	 ${BIN_DIR}/matchlz_sa \
+	 ${BIN_DIR}/matchlz_saf \
 	 ${BIN_DIR}/matchlz_mbmh_cd \
 	 ${BIN_DIR}/convert_pattern_files \
 	 ${BIN_DIR}/print_pattern_file
@@ -209,6 +210,13 @@ ${BIN_DIR}/matchlz_exh_cdr: ${BIN_DIR}/pattern_file.o ${BIN_DIR}/rosa_helping_fu
 ${BIN_DIR}/matchlz_sa: ${BIN_DIR}/pattern_file.o ${BIN_DIR}/rosa_helping_functions.o ${BIN_DIR}/rosa_helping_structures.o ${BIN_DIR}/bu_interval.o ${SRC_DIR}/rosa_main.cpp
 	g++ ${CFLAGS} -I${INCLUDE_PATH} -L${LIB_PATH} -DLCP_WRAP=1 -DMATCH_SA -DBENCH_MATCH \
 	    ${SRC_DIR}/rosa_main.cpp -o ${BIN_DIR}/matchlz_sa \
+		${BIN_DIR}/rosa_helping_functions.o ${BIN_DIR}/rosa_helping_structures.o ${BIN_DIR}/pattern_file.o \
+		${BIN_DIR}/bu_interval.o \
+		-lsdsl -ldivsufsort -ldivsufsort64
+
+${BIN_DIR}/matchlz_saf: ${BIN_DIR}/pattern_file.o ${BIN_DIR}/rosa_helping_functions.o ${BIN_DIR}/rosa_helping_structures.o ${BIN_DIR}/bu_interval.o ${SRC_DIR}/rosa_main.cpp
+	g++ ${CFLAGS} -I${INCLUDE_PATH} -L${LIB_PATH} -DLCP_WRAP=1 -DMATCH_SAF -DBENCH_MATCH \
+	    ${SRC_DIR}/rosa_main.cpp -o ${BIN_DIR}/matchlz_saf \
 		${BIN_DIR}/rosa_helping_functions.o ${BIN_DIR}/rosa_helping_structures.o ${BIN_DIR}/pattern_file.o \
 		${BIN_DIR}/bu_interval.o \
 		-lsdsl -ldivsufsort -ldivsufsort64
